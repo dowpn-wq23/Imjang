@@ -16,5 +16,8 @@ services:
         sync: false
       - key: DATA_GO_KR_KEY
         sync: false
+      # 서버에서 VWorld를 부를 때는 이 값만 확인하므로, PC용으로 등록한 주소를 그대로 씀 (VWorld 사이트 설정 변경 불필요)
+      - key: VWORLD_DOMAIN
+        value: http://localhost:3000
       - key: NAVER_LAND_ENABLED
         value: "true"

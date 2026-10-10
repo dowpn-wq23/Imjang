@@ -29,9 +29,10 @@
 앱 설치 없이 사파리로 엽니다. 공공 API·네이버 부동산은 브라우저에서 직접 부를 수 없어서(CORS),
 중계 서버(`server.js`)를 PC 대신 무료 클라우드(Render)에 올려 둡니다. 한 번만 설정하면 PC는 꺼져 있어도 됩니다.
 
-1. [render.com](https://render.com)에 GitHub 계정으로 가입 → **New → Blueprint** → 이 저장소 선택 (`render.yaml` 자동 인식)
-2. API 키 3개(`NAVER_MAP_KEY_ID`, `VWORLD_KEY`, `DATA_GO_KR_KEY`) 입력 → **Apply**
-3. 생긴 주소(`https://imjang-map-xxxx.onrender.com`)를 네이버 클라우드 Maps의 **Web 서비스 URL**과 VWorld **서비스 URL**에 추가
+1. **[여기를 눌러 Render에 배포](https://render.com/deploy?repo=https://github.com/dowpn-wq23/Imjang)** → GitHub 계정으로 로그인
+2. API 키 3개(`NAVER_MAP_KEY_ID`, `VWORLD_KEY`, `DATA_GO_KR_KEY`)에 PC의 `.env` 값을 붙여넣기 → **Deploy Blueprint**
+3. 몇 분 뒤 생긴 주소(`https://imjang-map-xxxx.onrender.com`)를 [네이버 클라우드 콘솔](https://console.ncloud.com) → Maps → Application → **Web 서비스 URL**에 추가
+   (VWorld는 PC용 등록 주소를 그대로 쓰므로 바꿀 필요 없음)
 4. 아이폰 **사파리**로 그 주소 열기 → **공유(□↑) → 홈 화면에 추가**
 
 > Render 무료 요금제는 15분 동안 안 쓰면 잠들어서, 오랜만에 열면 30초~1분 걸립니다.
