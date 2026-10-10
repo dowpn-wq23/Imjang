@@ -24,6 +24,22 @@
 > 키를 고치고 싶으면 폴더의 `.env` 파일을 메모장으로 열어 수정한 뒤 다시 실행하세요.
 > (윈도우 탐색기에서 `.env`가 안 보이면 상단 "보기 → 표시 → 숨긴 항목"을 켜세요.)
 
+## 아이폰 홈 화면 앱으로 설치 (추천, 무료 · PC 꺼져 있어도 됨)
+
+PC 없이 밖에서 쓰려면 서버를 클라우드(Render 무료)에 올리고, 아이폰에서 홈 화면에 추가합니다.
+
+1. [render.com](https://render.com)에 GitHub 계정으로 가입
+2. **New → Blueprint** → 이 저장소(`Imjang`) 선택 → `render.yaml`이 자동으로 읽힘
+3. API 키 3개(`NAVER_MAP_KEY_ID`, `VWORLD_KEY`, `DATA_GO_KR_KEY`) 입력 → **Apply**
+4. 배포가 끝나면 `https://imjang-map-xxxx.onrender.com` 같은 주소가 생김. 이 주소를
+   - 네이버 클라우드 Maps 앱의 **Web 서비스 URL**에 추가
+   - VWorld 인증키의 **서비스 URL**에 추가 (또는 이 주소로 키를 새로 발급)
+5. 아이폰 **사파리**로 그 주소 열기 → 아래쪽 **공유(□↑)** → **홈 화면에 추가**
+6. 홈 화면의 "임장지도" 아이콘으로 실행하면 주소창 없이 앱처럼 열리고, https라서 **내 위치(GPS)** 도 됩니다.
+
+> Render 무료 요금제는 15분 동안 안 쓰면 잠들어서, 오랜만에 열면 첫 화면까지 30초~1분 걸립니다.
+> `VWORLD_DOMAIN`은 Render 주소로 자동 설정됩니다. 직접 도메인을 붙이면 그 주소로 `VWORLD_DOMAIN`을 지정하세요.
+
 ## 아이폰 앱으로 테스트 (Expo Go, 무료)
 
 1. 아이폰 App Store에서 **Expo Go** 설치
@@ -72,3 +88,5 @@
 ## 파일 구성
 - `server.js` — 정적 파일 + API 프록시(키 보호, CORS 회피, 캐시)
 - `public/index.html`, `public/app.js`, `public/style.css` — 지도 앱
+- `public/manifest.webmanifest`, `public/icons/` — 아이폰 홈 화면 설치용 앱 정보·아이콘
+- `render.yaml` — Render 클라우드 배포 설정

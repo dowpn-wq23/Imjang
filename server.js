@@ -10,7 +10,8 @@ try { process.loadEnvFile(new URL('./.env', import.meta.url)); } catch { /* .env
 const PORT = Number(process.env.PORT || 3000);
 const NAVER_MAP_KEY_ID = process.env.NAVER_MAP_KEY_ID || '';
 const VWORLD_KEY = process.env.VWORLD_KEY || '';
-const VWORLD_DOMAIN = process.env.VWORLD_DOMAIN || `http://localhost:${PORT}`;
+// Render에 배포하면 RENDER_EXTERNAL_URL(https://○○.onrender.com)이 자동으로 들어옴
+const VWORLD_DOMAIN = process.env.VWORLD_DOMAIN || process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
 const DATA_GO_KR_KEY = process.env.DATA_GO_KR_KEY || '';
 const NAVER_LAND_ENABLED = process.env.NAVER_LAND_ENABLED !== 'false';
 const PUBLIC_DIR = fileURLToPath(new URL('./public/', import.meta.url));
@@ -328,7 +329,7 @@ async function apiListings(q) {
 }
 
 // ---------- 정적 파일 ----------
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.webmanifest': 'application/manifest+json; charset=utf-8' };
 
 async function serveStatic(pathname, res) {
   const rel = normalize(decodeURIComponent(pathname === '/' ? '/index.html' : pathname)).replace(/^([/\\])+/, '');

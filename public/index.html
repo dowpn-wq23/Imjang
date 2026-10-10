@@ -4,6 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
   <title>임장지도</title>
+  <!-- 아이폰 사파리 → 공유 → "홈 화면에 추가"로 앱처럼 설치 -->
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="임장지도">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#03c75a">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -42,6 +50,11 @@
   </div>
 
   <div id="fatal" class="fatal hidden"></div>
+
+  <div id="install-tip" class="install-tip hidden" role="note">
+    <span>사파리 아래쪽 <b>공유</b> 버튼 → <b>홈 화면에 추가</b>를 누르면 앱처럼 설치됩니다.</span>
+    <button class="install-tip-close" aria-label="닫기">×</button>
+  </div>
 
   <script src="/config.js"></script>
   <script src="app.js"></script>

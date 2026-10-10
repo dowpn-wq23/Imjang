@@ -1,0 +1,20 @@
+# Render 무료 클라우드 배포 설정 — render.com → New → Blueprint → 이 저장소 선택
+# 배포 화면에서 아래 sync:false 항목(API 키)을 입력합니다. 키는 저장소에 올라가지 않습니다.
+services:
+  - type: web
+    name: imjang-map
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm install --omit=dev
+    startCommand: node server.js
+    healthCheckPath: /
+    envVars:
+      - key: NAVER_MAP_KEY_ID
+        sync: false
+      - key: VWORLD_KEY
+        sync: false
+      - key: DATA_GO_KR_KEY
+        sync: false
+      - key: NAVER_LAND_ENABLED
+        value: "true"

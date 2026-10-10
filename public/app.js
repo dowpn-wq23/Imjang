@@ -89,6 +89,22 @@ window.__imjangNative = msg => {
   if (msg.type === 'location-error') setHint(`위치를 가져오지 못했습니다: ${msg.message}`);
 };
 
+// ===================== 아이폰 홈 화면 설치 안내 =====================
+// 사파리로 열었고 아직 홈 화면 앱으로 실행한 게 아니면 한 번 안내 (닫으면 다시 안 띄움)
+(() => {
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const standalone = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+  let dismissed = false;
+  try { dismissed = localStorage.getItem('imjang:installTip') === 'off'; } catch { /* 무시 */ }
+  if (!isIOS || standalone || IN_APP || dismissed) return;
+  const tip = $('#install-tip');
+  tip.classList.remove('hidden');
+  tip.querySelector('.install-tip-close').addEventListener('click', () => {
+    tip.classList.add('hidden');
+    try { localStorage.setItem('imjang:installTip', 'off'); } catch { /* 무시 */ }
+  });
+})();
+
 loadNaverMaps().then(init).catch(e => showFatal(e.message));
 
 function init() {
