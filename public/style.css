@@ -189,7 +189,7 @@ tr.canceled .badge { text-decoration: none; }
 .pano-msg { position: absolute; z-index: 2; inset: 0; display: grid; place-items: center; text-align: center; color: #fff; background: rgba(0,0,0,.75); padding: 20px; font-size: 14px; }
 
 .fatal { position: absolute; z-index: 50; inset: 0; display: grid; place-content: center; text-align: center; background: var(--bg); color: var(--fg); padding: 24px; }
-.fatal p { max-width: 460px; line-height: 1.6; }
+.fatal p { max-width: 460px; line-height: 1.6; white-space: pre-line; word-break: keep-all; overflow-wrap: anywhere; }
 
 /* ---------- 아이폰 홈 화면 설치 안내 ---------- */
 .install-tip {

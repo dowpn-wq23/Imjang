@@ -69,8 +69,10 @@ const state = {
 function loadNaverMaps() {
   const id = window.APP_CONFIG?.naverKeyId;
   if (!id) return Promise.reject(new Error(IN_APP ? '⚙ 설정에서 네이버 지도 Client ID를 입력하세요.' : '.env에 NAVER_MAP_KEY_ID가 설정되지 않았습니다.'));
+  // 지금 열린 주소를 그대로 보여줘서 NCP 콘솔에 무엇을 등록해야 하는지 바로 알 수 있게 함
+  const origin = IN_APP ? 'http://localhost:3000' : location.origin;
   window.navermap_authFailure = () =>
-    showFatal('네이버 지도 인증 실패: NCP 콘솔에서 Client ID와 등록된 Web 서비스 URL(예: http://localhost:3000)을 확인하세요.');
+    showFatal(`네이버 지도 인증 실패: 네이버 클라우드 콘솔 → Maps → Application → Web 서비스 URL에 아래 주소를 그대로 추가하세요. (저장 후 반영까지 몇 분 걸릴 수 있습니다)\n\n${origin}`);
   return new Promise((resolve, reject) => {
     const s = document.createElement('script');
     s.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${encodeURIComponent(id)}&submodules=panorama`;
