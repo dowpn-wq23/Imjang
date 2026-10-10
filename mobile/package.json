@@ -13,6 +13,8 @@
     "react-native-webview": "13.16.1"
   },
   "scripts": {
+    "bundle-web": "node scripts/bundle-web.mjs",
+    "prestart": "npm run bundle-web",
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",

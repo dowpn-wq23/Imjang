@@ -30,6 +30,7 @@ echo     아이폰 기본 카메라로 QR을 찍으면 Expo Go 앱에서 열립니다.
 echo     아이폰과 이 PC는 같은 와이파이에 연결되어 있어야 합니다.
 echo.
 cd mobile
+call npm run bundle-web
 call npx expo start --lan
 pause
 exit /b

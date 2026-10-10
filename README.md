@@ -24,32 +24,43 @@
 > 키를 고치고 싶으면 폴더의 `.env` 파일을 메모장으로 열어 수정한 뒤 다시 실행하세요.
 > (윈도우 탐색기에서 `.env`가 안 보이면 상단 "보기 → 표시 → 숨긴 항목"을 켜세요.)
 
-## 아이폰 홈 화면 앱으로 설치 (추천, 무료 · PC 꺼져 있어도 됨)
+## 아이폰 앱 (서버 필요 없음)
 
-PC 없이 밖에서 쓰려면 서버를 클라우드(Render 무료)에 올리고, 아이폰에서 홈 화면에 추가합니다.
+`mobile/`의 앱은 **PC 서버 없이 혼자 동작**합니다. 지도 화면이 앱 안에 들어 있고, 공공 API·네이버 부동산은 앱(내 폰)이 직접 조회합니다.
+API 키는 앱 첫 화면(또는 지도 왼쪽 위 ⚙)에서 입력하며, 그 아이폰에만 저장됩니다.
 
-1. [render.com](https://render.com)에 GitHub 계정으로 가입
-2. **New → Blueprint** → 이 저장소(`Imjang`) 선택 → `render.yaml`이 자동으로 읽힘
-3. API 키 3개(`NAVER_MAP_KEY_ID`, `VWORLD_KEY`, `DATA_GO_KR_KEY`) 입력 → **Apply**
-4. 배포가 끝나면 `https://imjang-map-xxxx.onrender.com` 같은 주소가 생김. 이 주소를
-   - 네이버 클라우드 Maps 앱의 **Web 서비스 URL**에 추가
-   - VWorld 인증키의 **서비스 URL**에 추가 (또는 이 주소로 키를 새로 발급)
-5. 아이폰 **사파리**로 그 주소 열기 → 아래쪽 **공유(□↑)** → **홈 화면에 추가**
-6. 홈 화면의 "임장지도" 아이콘으로 실행하면 주소창 없이 앱처럼 열리고, https라서 **내 위치(GPS)** 도 됩니다.
+- 네이버 클라우드 Maps의 Web 서비스 URL에 `http://localhost:3000`이 등록돼 있어야 합니다 (PC용으로 이미 등록했다면 그대로 OK).
+- 네이버 부동산 요청이 클라우드가 아닌 내 폰(한국 IP)에서 나가서 차단될 가능성이 낮습니다.
 
-> Render 무료 요금제는 15분 동안 안 쓰면 잠들어서, 오랜만에 열면 첫 화면까지 30초~1분 걸립니다.
-> `VWORLD_DOMAIN`은 Render 주소로 자동 설정됩니다. 직접 도메인을 붙이면 그 주소로 `VWORLD_DOMAIN`을 지정하세요.
-
-## 아이폰 앱으로 테스트 (Expo Go, 무료)
-
+### 설치 방법
+**A. 테스트 (무료, 처음 한 번 PC 필요)** — Expo Go
 1. 아이폰 App Store에서 **Expo Go** 설치
-2. 네이버 클라우드 Maps의 Web 서비스 URL에 `http://PC의IP:3000` 추가 (예: `http://121.185.115.227:3000`)
-3. PC에서 **`아이폰으로-테스트하기.bat`** 더블클릭 → 윈도우 방화벽 창이 뜨면 **허용**
-4. 화면에 나온 QR을 아이폰 기본 카메라로 찍기 → Expo Go에서 임장지도가 열림
-5. 지도 왼쪽 위 ⚙ 버튼으로 서버 주소를 바꿀 수 있습니다 (클라우드 배포 후 https 주소로 교체)
+2. PC에서 **`아이폰으로-테스트하기.bat`** 더블클릭 → 윈도우 방화벽 창이 뜨면 **허용**
+3. 화면에 나온 QR을 아이폰 기본 카메라로 찍기 → Expo Go에서 임장지도가 열림
+4. 첫 화면에서 API 키 3개 입력 → 저장
 
-앱 코드는 `mobile/` 폴더에 있습니다. 지도 화면은 `public/`을 그대로 쓰므로, 화면을 고치면 앱에도 바로 반영됩니다.
-정식 설치(TestFlight)는 Apple 개발자 계정 가입 후 `npx eas-cli@latest build -p ios`로 클라우드 빌드합니다.
+> 이 방식은 앱 코드를 PC에서 받아오므로 PC가 켜져 있고 같은 와이파이여야 열립니다.
+> PC 없이 Expo Go로 열려면 [expo.dev](https://expo.dev) 무료 계정을 만들고 `mobile/`에서 `npx eas-cli@latest update`로 앱을 올립니다.
+
+**B. 내 아이폰에 정식 앱으로 설치 (Apple 개발자 계정, 연 $99)**
+1. [Apple Developer Program](https://developer.apple.com/programs/) 가입
+2. `mobile/`에서 `npx eas-cli@latest build -p ios` → 클라우드에서 빌드 (Mac 필요 없음)
+3. `npx eas-cli@latest submit -p ios` → TestFlight 앱으로 설치
+
+### 화면을 고쳤을 때
+지도 화면 원본은 `public/`, 데이터 조회 원본은 `core/api.js` 하나입니다. 고친 뒤 `mobile/`에서 `npm run bundle-web`을 실행하면
+앱용 파일(`mobile/generated/`)이 다시 만들어집니다 (`npm start`·`아이폰으로-테스트하기.bat`은 자동 실행).
+
+## (선택) 웹으로 쓰기 — Render 클라우드 + 홈 화면에 추가
+
+앱 대신 사파리 웹으로 쓰고 싶을 때만 필요합니다.
+
+1. [render.com](https://render.com)에 GitHub 계정으로 가입 → **New → Blueprint** → 이 저장소 선택 (`render.yaml` 자동 인식)
+2. API 키 3개(`NAVER_MAP_KEY_ID`, `VWORLD_KEY`, `DATA_GO_KR_KEY`) 입력 → **Apply**
+3. 생긴 주소(`https://imjang-map-xxxx.onrender.com`)를 네이버 클라우드 Maps의 **Web 서비스 URL**과 VWorld **서비스 URL**에 추가
+4. 아이폰 **사파리**로 그 주소 열기 → **공유(□↑) → 홈 화면에 추가**
+
+> Render 무료 요금제는 15분 동안 안 쓰면 잠들어서, 오랜만에 열면 30초~1분 걸립니다.
 
 ## API 키 설정
 
@@ -86,7 +97,9 @@ PC 없이 밖에서 쓰려면 서버를 클라우드(Render 무료)에 올리고
 - **실거래가 매칭**은 클릭한 필지의 지번 = 신고 지번으로 찾고, 없으면 건축물대장의 건물명으로 찾습니다. 단지가 여러 필지에 걸쳐 있으면 단지 안 다른 곳을 눌러보세요.
 
 ## 파일 구성
-- `server.js` — 정적 파일 + API 프록시(키 보호, CORS 회피, 캐시)
+- `server.js` — PC/웹용 서버: 정적 파일 + API 프록시
+- `core/api.js` — 공공 API·네이버 부동산 조회 로직 (서버와 아이폰 앱이 공용)
+- `mobile/` — 아이폰 앱 (Expo). `mobile/generated/`는 `npm run bundle-web`이 만드는 파일
 - `public/index.html`, `public/app.js`, `public/style.css` — 지도 앱
 - `public/manifest.webmanifest`, `public/icons/` — 아이폰 홈 화면 설치용 앱 정보·아이콘
 - `render.yaml` — Render 클라우드 배포 설정

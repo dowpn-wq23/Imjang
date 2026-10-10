@@ -27,10 +27,22 @@ function wonShort(won) {
 }
 
 async function api(path) {
+  if (window.ReactNativeWebView) return nativeApi(path); // 아이폰 앱: 서버 없이 앱이 직접 조회
   const r = await fetch(path);
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
   return j;
+}
+
+// 앱(React Native)에 요청을 넘기고 답을 기다림 — window.__imjangNative의 'api-result'로 돌아옴
+const nativeCalls = new Map();
+let nativeSeq = 0;
+function nativeApi(path) {
+  return new Promise((resolve, reject) => {
+    const id = ++nativeSeq;
+    nativeCalls.set(id, { resolve, reject });
+    window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'api', id, path }));
+  });
 }
 
 function haversine(a, b) {
@@ -56,7 +68,7 @@ const state = {
 // ===================== 네이버 지도 로딩 =====================
 function loadNaverMaps() {
   const id = window.APP_CONFIG?.naverKeyId;
-  if (!id) return Promise.reject(new Error('.env에 NAVER_MAP_KEY_ID가 설정되지 않았습니다.'));
+  if (!id) return Promise.reject(new Error(IN_APP ? '⚙ 설정에서 네이버 지도 Client ID를 입력하세요.' : '.env에 NAVER_MAP_KEY_ID가 설정되지 않았습니다.'));
   window.navermap_authFailure = () =>
     showFatal('네이버 지도 인증 실패: NCP 콘솔에서 Client ID와 등록된 Web 서비스 URL(예: http://localhost:3000)을 확인하세요.');
   return new Promise((resolve, reject) => {
@@ -71,7 +83,7 @@ function loadNaverMaps() {
 function showFatal(msg) {
   const el = $('#fatal');
   el.innerHTML = `<b>시작할 수 없습니다</b><p>${esc(msg)}</p><p class="muted">README의 "API 키 설정"을 참고하세요.</p>
-    ${IN_APP ? '<button class="btn" data-native="settings">앱 서버 주소 설정</button>' : ''}`;
+    ${IN_APP ? '<button class="btn" data-native="settings">API 키 설정</button>' : ''}`;
   el.classList.remove('hidden');
 }
 
@@ -85,6 +97,13 @@ document.addEventListener('click', e => {
   if (t) toNative({ type: t.dataset.native });
 });
 window.__imjangNative = msg => {
+  if (msg.type === 'api-result') {
+    const call = nativeCalls.get(msg.id);
+    if (!call) return;
+    nativeCalls.delete(msg.id);
+    if (msg.status >= 200 && msg.status < 300) call.resolve(msg.body);
+    else call.reject(new Error(msg.body?.error || `HTTP ${msg.status}`));
+  }
   if (msg.type === 'location') showMyLocation(msg.lat, msg.lng);
   if (msg.type === 'location-error') setHint(`위치를 가져오지 못했습니다: ${msg.message}`);
 };
