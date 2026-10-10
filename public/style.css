@@ -199,3 +199,4 @@ tr.canceled .badge { text-decoration: none; }
 }
 .install-tip span { flex: 1; word-break: keep-all; }
 .install-tip-close { flex: none; border: 0; background: var(--bg-soft); width: 32px; height: 32px; border-radius: 50%; font-size: 18px; }
+.note.warn { background: color-mix(in srgb, var(--warn) 14%, var(--bg)); color: var(--fg); }

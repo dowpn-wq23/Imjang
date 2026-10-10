@@ -26,16 +26,18 @@
 
 ## 아이폰에서 바로 쓰기 (추천) — 사파리 + 홈 화면에 추가
 
-앱 설치 없이 사파리로 엽니다. 공공 API·네이버 부동산은 브라우저에서 직접 부를 수 없어서(CORS),
-중계 서버(`server.js`)를 PC 대신 무료 클라우드(Render)에 올려 둡니다. 한 번만 설정하면 PC는 꺼져 있어도 됩니다.
+앱 설치 없이 사파리로 엽니다. 공공 API·네이버 부동산은 브라우저에서 직접 부를 수 없어서(CORS) 중계 서버가 필요한데,
+PC 대신 무료 클라우드 **Vercel 서울 리전**에서 돌립니다. (공공데이터포털·네이버 부동산은 해외 서버 접속을 막을 수 있어서 서울이어야 합니다)
 
-1. **[여기를 눌러 Render에 배포](https://render.com/deploy?repo=https://github.com/dowpn-wq23/Imjang)** → GitHub 계정으로 로그인
-2. API 키 3개(`NAVER_MAP_KEY_ID`, `VWORLD_KEY`, `DATA_GO_KR_KEY`)에 PC의 `.env` 값을 붙여넣기 → **Deploy Blueprint**
-3. 몇 분 뒤 생긴 주소(`https://imjang-map-xxxx.onrender.com`)를 [네이버 클라우드 콘솔](https://console.ncloud.com) → Maps → Application → **Web 서비스 URL**에 추가
+1. [vercel.com/new](https://vercel.com/new) → **Continue with GitHub** → `Imjang` 저장소 **Import**
+2. **Environment Variables**에 3개 추가 (PC의 `.env` 값): `NAVER_MAP_KEY_ID`, `VWORLD_KEY`, `DATA_GO_KR_KEY` → **Deploy**
+3. 생긴 주소(`https://imjang-xxxx.vercel.app`)를 [네이버 클라우드 콘솔](https://console.ncloud.com) → Maps → Application → **Web 서비스 URL**에 추가
    (VWorld는 PC용 등록 주소를 그대로 쓰므로 바꿀 필요 없음)
 4. 아이폰 **사파리**로 그 주소 열기 → **공유(□↑) → 홈 화면에 추가**
 
-> Render 무료 요금제는 15분 동안 안 쓰면 잠들어서, 오랜만에 열면 30초~1분 걸립니다.
+GitHub `main`에 올리면 Vercel이 자동으로 다시 배포합니다. 서버 코드는 `api/`(Vercel 함수) → `core/api.js`입니다.
+
+> `render.yaml`(Render, 싱가포르)도 남아 있지만, 해외 서버라 실거래가·매물이 막힐 수 있어 권장하지 않습니다.
 
 ## (선택) 아이폰 앱 — Expo, 서버 필요 없음
 
@@ -95,7 +97,7 @@ API 키는 앱 첫 화면(또는 지도 왼쪽 위 ⚙)에서 입력하며, 그 
   - 공식 API가 아니라서 네이버가 언제든 막을 수 있고(429 "요청 과다"), 막히면 10분간 요청을 멈춘 뒤 "네이버 부동산에서 보기" 버튼으로 안내합니다.
   - 개인 임장용으로만 쓰고, 끄려면 `.env`에서 `NAVER_LAND_ENABLED=false`.
 - eiass(환경영향평가) **토지이용정보 API**는 환경영향평가 *사업코드*로 조회하는 API라서, 지도에서 누른 필지의 용도지역 조회에는 쓸 수 없습니다. 필지별 용도지역은 토지이음과 같은 원천인 VWorld 토지이용계획 API로 가져옵니다.
-- **경사도**는 90m 해상도 DEM 기준이라 짧은 골목·옹벽·단차는 반영되지 않습니다. 정밀도가 필요하면 국토지리정보원 5m DEM을 서버에 올려 `measureSlope`의 고도 조회만 교체하면 됩니다.
+- **경사도**는 90m 해상도 DEM 기준이고, 건물·나무 높이가 섞인 표면 고도라서 아파트 단지·숲에서는 크게 틀릴 수 있습니다. 짧은 골목·옹벽·단차도 반영되지 않습니다. 정밀도가 필요하면 국토지리정보원 5m DEM을 서버에 올려 `measureSlope`의 고도 조회만 교체하면 됩니다.
 - **실거래가 매칭**은 클릭한 필지의 지번 = 신고 지번으로 찾고, 없으면 건축물대장의 건물명으로 찾습니다. 단지가 여러 필지에 걸쳐 있으면 단지 안 다른 곳을 눌러보세요.
 
 ## 파일 구성
@@ -104,4 +106,5 @@ API 키는 앱 첫 화면(또는 지도 왼쪽 위 ⚙)에서 입력하며, 그 
 - `mobile/` — 아이폰 앱 (Expo). `mobile/generated/`는 `npm run bundle-web`이 만드는 파일
 - `public/index.html`, `public/app.js`, `public/style.css` — 지도 앱
 - `public/manifest.webmanifest`, `public/icons/` — 아이폰 홈 화면 설치용 앱 정보·아이콘
-- `render.yaml` — Render 클라우드 배포 설정
+- `vercel.json`, `api/`, `core/vercel.js` — Vercel(서울) 배포 설정
+- `render.yaml` — Render 클라우드 배포 설정 (해외 서버라 비권장)

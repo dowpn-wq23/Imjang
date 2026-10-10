@@ -38,8 +38,28 @@ export function createApi({ VWORLD_KEY = '', VWORLD_DOMAIN = 'http://localhost:3
   const qs = params => Object.entries(params).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
   const hostOf = url => (String(url).match(/^https?:\/\/([^/?#]+)([^?#]*)/) || []).slice(1).join('');
 
+  // 접속 자체가 안 될 때 Node는 'fetch failed'만 알려줘서, 어느 사이트에서 왜 실패했는지 붙여 줌
+  async function netFetch(url, opts = {}, ms = 15000) {
+    try {
+      return await fetch(url, { ...opts, signal: timeout(ms) });
+    } catch (e) {
+      const why = e.name === 'AbortError' ? `${ms / 1000}초 동안 응답 없음` : e.cause?.code || e.cause?.message || e.message;
+      throw new Error(`${hostOf(url).split('/')[0]} 접속 실패 (${why}) — 서버가 해외에 있으면 한국 사이트가 접속을 막을 수 있습니다`);
+    }
+  }
+
+  // 동시에 너무 많이 요청하면 공공데이터포털이 연결을 끊으므로 n개씩 나눠서 처리
+  async function mapLimit(items, n, fn) {
+    const out = new Array(items.length);
+    let next = 0;
+    await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => {
+      while (next < items.length) { const i = next++; out[i] = await fn(items[i]); }
+    }));
+    return out;
+  }
+
   async function getText(url) {
-    const res = await fetch(url, { signal: timeout(15000) });
+    const res = await netFetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status} (${hostOf(url)})`);
     return res.text();
   }
@@ -192,7 +212,7 @@ export function createApi({ VWORLD_KEY = '', VWORLD_DOMAIN = 'http://localhost:3
     const bon = Number(pnu.slice(11, 15)), bu = Number(pnu.slice(15, 19));
     const jibun = bu ? `${bon}-${bu}` : String(bon);
 
-    const all = (await Promise.all(recentYmds(months).map(ymd => aptTradesMonth(lawd, ymd)))).flat();
+    const all = (await mapLimit(recentYmds(months), 4, ymd => aptTradesMonth(lawd, ymd))).flat();
     const sameDong = r => (r.umdCd ? String(r.umdCd) === umdCd : !dong || r.umdNm === dong);
     let matchedBy = 'jibun';
     let rows = all.filter(r => sameDong(r) && normJibun(r.jibun) === jibun);
@@ -238,7 +258,7 @@ export function createApi({ VWORLD_KEY = '', VWORLD_DOMAIN = 'http://localhost:3
   }
 
   async function getTextWith(url, headers) {
-    const res = await fetch(url, { headers, signal: timeout(10000) });
+    const res = await netFetch(url, { headers }, 10000);
     if (!res.ok) throw new Error(`HTTP ${res.status} (${hostOf(url)})`);
     return res.text();
   }
@@ -267,10 +287,9 @@ export function createApi({ VWORLD_KEY = '', VWORLD_DOMAIN = 'http://localhost:3
       const jwt = await naverLandToken(attempt > 0);
       await nlThrottle();
       const u = `${NL_BASE}${path}?${qs(params)}`;
-      const res = await fetch(u, {
+      const res = await netFetch(u, {
         headers: { ...NL_HEADERS, Accept: 'application/json', Authorization: `Bearer ${jwt}` },
-        signal: timeout(10000),
-      });
+      }, 10000);
       if (res.status === 429) {
         nlBlockedUntil = Date.now() + NL_COOLDOWN_MS;
         throw Object.assign(new Error('네이버 부동산이 접속을 일시 제한했습니다(요청 과다). 10분쯤 뒤 다시 시도하세요'), { status: 429 });

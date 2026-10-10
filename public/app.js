@@ -655,7 +655,8 @@ function renderSlope(dist, elev) {
       <dt>누적 오르막</dt><dd>${up.toFixed(1)}m</dd>
       <dt>누적 내리막</dt><dd>${down.toFixed(1)}m</dd>
     </dl>
-    <div class="note">고도는 Copernicus 90m 해상도 DEM(Open-Meteo) 기준이라 짧은 구간(100m 미만)·옹벽·건물 단차는 반영되지 않습니다. 대략적인 지형 경향 확인용으로 쓰세요.</div>`);
+    ${dist < 300 ? `<div class="note warn">거리가 ${dist.toFixed(0)}m로 짧아 이 값은 믿기 어렵습니다. 고도 자료가 약 90m 간격이라 300m 미만 구간은 오차가 경사보다 클 수 있습니다.</div>` : ''}
+    <div class="note">고도는 Copernicus 90m DEM(Open-Meteo) 기준입니다. 이 자료는 <b>건물·나무 높이가 섞인 표면 고도</b>라서 아파트 단지·숲에서는 실제 땅 높이보다 수십 m 높게 나올 수 있습니다. 동네 전체의 대략적인 높낮이 경향 확인용으로만 쓰세요.</div>`);
   setHint('다시 누르면 새 구간을 잽니다');
 }
 
