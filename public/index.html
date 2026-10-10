@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <title>임장지도</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">임장지도</div>
+    <nav class="mode-tabs" role="tablist">
+      <button data-mode="apt" class="active" role="tab">아파트</button>
+      <button data-mode="land" role="tab">상가·토지</button>
+    </nav>
+    <button class="app-only app-settings" data-native="settings" aria-label="앱 설정">⚙</button>
+  </header>
+
+  <div id="map"></div>
+
+  <div class="tools" role="toolbar">
+    <button data-tool="info" class="active">정보</button>
+    <button data-tool="slope">경사도</button>
+    <button data-tool="street">거리뷰</button>
+    <div class="sep"></div>
+    <button id="btn-cadastral">지적도</button>
+    <button id="btn-locate">내 위치</button>
+  </div>
+
+  <div id="hint" class="hint"></div>
+
+  <aside id="panel" class="panel hidden">
+    <button class="panel-grip" aria-label="패널 크기 전환"></button>
+    <button class="panel-close" aria-label="닫기">×</button>
+    <div id="panel-body"></div>
+  </aside>
+
+  <div id="pano-wrap" class="pano hidden">
+    <div id="pano"></div>
+    <button class="pano-close">닫기 ×</button>
+    <div id="pano-msg" class="pano-msg hidden">이 위치에는 거리뷰가 없습니다. 지도의 파란 선 위를 눌러보세요.</div>
+  </div>
+
+  <div id="fatal" class="fatal hidden"></div>
+
+  <script src="/config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
