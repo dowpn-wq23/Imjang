@@ -24,7 +24,19 @@
 > 키를 고치고 싶으면 폴더의 `.env` 파일을 메모장으로 열어 수정한 뒤 다시 실행하세요.
 > (윈도우 탐색기에서 `.env`가 안 보이면 상단 "보기 → 표시 → 숨긴 항목"을 켜세요.)
 
-## 아이폰 앱 (서버 필요 없음)
+## 아이폰에서 바로 쓰기 (추천) — 사파리 + 홈 화면에 추가
+
+앱 설치 없이 사파리로 엽니다. 공공 API·네이버 부동산은 브라우저에서 직접 부를 수 없어서(CORS),
+중계 서버(`server.js`)를 PC 대신 무료 클라우드(Render)에 올려 둡니다. 한 번만 설정하면 PC는 꺼져 있어도 됩니다.
+
+1. [render.com](https://render.com)에 GitHub 계정으로 가입 → **New → Blueprint** → 이 저장소 선택 (`render.yaml` 자동 인식)
+2. API 키 3개(`NAVER_MAP_KEY_ID`, `VWORLD_KEY`, `DATA_GO_KR_KEY`) 입력 → **Apply**
+3. 생긴 주소(`https://imjang-map-xxxx.onrender.com`)를 네이버 클라우드 Maps의 **Web 서비스 URL**과 VWorld **서비스 URL**에 추가
+4. 아이폰 **사파리**로 그 주소 열기 → **공유(□↑) → 홈 화면에 추가**
+
+> Render 무료 요금제는 15분 동안 안 쓰면 잠들어서, 오랜만에 열면 30초~1분 걸립니다.
+
+## (선택) 아이폰 앱 — Expo, 서버 필요 없음
 
 `mobile/`의 앱은 **PC 서버 없이 혼자 동작**합니다. 지도 화면이 앱 안에 들어 있고, 공공 API·네이버 부동산은 앱(내 폰)이 직접 조회합니다.
 API 키는 앱 첫 화면(또는 지도 왼쪽 위 ⚙)에서 입력하며, 그 아이폰에만 저장됩니다.
@@ -50,17 +62,6 @@ API 키는 앱 첫 화면(또는 지도 왼쪽 위 ⚙)에서 입력하며, 그 
 ### 화면을 고쳤을 때
 지도 화면 원본은 `public/`, 데이터 조회 원본은 `core/api.js` 하나입니다. 고친 뒤 `mobile/`에서 `npm run bundle-web`을 실행하면
 앱용 파일(`mobile/generated/`)이 다시 만들어집니다 (`npm start`·`아이폰으로-테스트하기.bat`은 자동 실행).
-
-## (선택) 웹으로 쓰기 — Render 클라우드 + 홈 화면에 추가
-
-앱 대신 사파리 웹으로 쓰고 싶을 때만 필요합니다.
-
-1. [render.com](https://render.com)에 GitHub 계정으로 가입 → **New → Blueprint** → 이 저장소 선택 (`render.yaml` 자동 인식)
-2. API 키 3개(`NAVER_MAP_KEY_ID`, `VWORLD_KEY`, `DATA_GO_KR_KEY`) 입력 → **Apply**
-3. 생긴 주소(`https://imjang-map-xxxx.onrender.com`)를 네이버 클라우드 Maps의 **Web 서비스 URL**과 VWorld **서비스 URL**에 추가
-4. 아이폰 **사파리**로 그 주소 열기 → **공유(□↑) → 홈 화면에 추가**
-
-> Render 무료 요금제는 15분 동안 안 쓰면 잠들어서, 오랜만에 열면 30초~1분 걸립니다.
 
 ## API 키 설정
 
