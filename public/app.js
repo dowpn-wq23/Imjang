@@ -558,7 +558,7 @@ function renderListings(cur) {
       `<button data-action="complex" data-complex="${esc(o.complexNo)}" class="chip">${esc(o.name)}</button>`).join('')}</div>` : ''}`;
 
   if (!L.listings.length) return head + chips + `<div class="empty">${typeName[cur.listingType]} 매물이 없습니다.</div>` + openBtn(c.url);
-  return head + chips + `<div class="muted small">${L.listings.length}건 · 네이버 부동산 랭킹순</div>` + L.listings.map(i => `
+  return head + chips + `<div class="muted small">${L.listings.length}건 · 최저가순</div>` + L.listings.map(i => `
     <a class="lcard" href="${esc(i.url)}" target="_blank" rel="noopener">
       <div class="lcard-price"><span class="lcard-type">${esc(typeName[i.tradeType] || '')}</span> ${esc(i.price)}${i.rent ? ` / ${esc(i.rent)}` : ''}</div>
       <div class="lcard-m">${esc(i.building || '')} · ${esc(i.areaName || '')}${i.area ? `/${esc(i.area)}㎡` : ''}${i.floor ? ` · ${esc(i.floor)}층` : ''}${i.direction ? ` · ${esc(i.direction)}` : ''}</div>

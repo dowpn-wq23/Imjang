@@ -324,6 +324,14 @@ export function createApi({ VWORLD_KEY = '', VWORLD_DOMAIN = 'http://localhost:3
     throw new Error('네이버 부동산이 요청을 거절했습니다. 잠시 후 다시 시도하세요');
   }
 
+  // 네이버 가격 표기 → 만원 ('10억 5,000' → 105000, '9,500' → 9500, 읽을 수 없으면 맨 뒤로)
+  function priceMan(text) {
+    const t = String(text ?? '').replace(/[,\s]/g, '');
+    const m = t.match(/^(?:(\d+(?:\.\d+)?)억)?(\d+)?$/);
+    if (!t || !m || (!m[1] && !m[2])) return Infinity;
+    return Math.round(Number(m[1] || 0) * 10000) + Number(m[2] || 0);
+  }
+
   function distM(a, b) {
     const R = 6371008.8, rad = Math.PI / 180;
     const h = Math.sin((b.lat - a.lat) * rad / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin((b.lng - a.lng) * rad / 2) ** 2;
@@ -357,10 +365,18 @@ export function createApi({ VWORLD_KEY = '', VWORLD_DOMAIN = 'http://localhost:3
       dist: Math.round(cx.dist), url: `${NL_PAGE}/${cx.complexNo}`,
     };
 
-    const articles = await cached(`nl:art:${complex.complexNo}:${tradeType}`, 10 * 60_000, async () => {
+    // 가격순(prc)으로 받아야 5페이지 안에 최저가 매물이 들어옴. 아래에서 한 번 더 정렬함
+    const articles = await cached(`nl:art:${complex.complexNo}:${tradeType}:prc`, 10 * 60_000, async () => {
       const out = [];
+      let order = 'prc';
       for (let page = 1; page <= 5; page++) {
-        const j = await naverLand(`/articles/complex/${complex.complexNo}`, { tradeType, order: 'rank', page: String(page) });
+        const get = () => naverLand(`/articles/complex/${complex.complexNo}`, { tradeType, order, page: String(page) });
+        let j;
+        try { j = await get(); } catch (e) {
+          if (page > 1 || e.status) throw e; // 차단·요청 과다는 그대로 알림
+          order = 'rank'; // 네이버가 가격순 옵션을 거부하면 랭킹순으로 받아서 직접 정렬
+          j = await get();
+        }
         out.push(...(j.articleList ?? []));
         if (!j.isMoreData) break;
       }
@@ -374,6 +390,8 @@ export function createApi({ VWORLD_KEY = '', VWORLD_DOMAIN = 'http://localhost:3
       confirmedAt: a.articleConfirmYmd, sameAddrCnt: num(a.sameAddrCnt),
       url: `${NL_PAGE}/${complex.complexNo}?articleNo=${a.articleNo}`,
     }));
+    // 최저가순 (월세는 보증금 → 월세 순)
+    listings.sort((x, y) => priceMan(x.price) - priceMan(y.price) || priceMan(x.rent) - priceMan(y.rent));
     return [200, { complex, candidates, tradeType, listings }];
   }
 
