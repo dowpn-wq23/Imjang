@@ -4,8 +4,10 @@
   "private": true,
   "description": "임장용 지도 — 네이버 지도 + 토지이용계획·공시지가·건축물대장·아파트 실거래가",
   "type": "module",
-  "engines": { "node": ">=20.12" },
+  "engines": {
+    "node": ">=20.12"
+  },
   "scripts": {
-    "start": "node server.js"
+    "start": "node pc-server.js"
   }
 }

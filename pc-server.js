@@ -1,4 +1,5 @@
-// 임장지도 서버 — 외부 패키지 없이 Node 20.12+ 기본 기능만 사용
+// 임장지도 PC용 서버 — 외부 패키지 없이 Node 20.12+ 기본 기능만 사용
+// (파일 이름이 server.js면 Vercel이 이 파일을 서버 앱으로 오인해서 pc-server.js로 둠)
 // 역할: 정적 파일 제공 + 공공 API(VWorld, data.go.kr) 프록시 (API 키 보호, CORS 회피, 캐시)
 // API 처리 로직은 core/api.js (아이폰 앱과 공용)
 import http from 'node:http';

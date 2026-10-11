@@ -7,7 +7,7 @@ services:
     plan: free
     region: singapore
     buildCommand: npm install --omit=dev
-    startCommand: node server.js
+    startCommand: node pc-server.js
     healthCheckPath: /
     envVars:
       - key: NAVER_MAP_KEY_ID

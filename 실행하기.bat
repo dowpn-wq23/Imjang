@@ -19,7 +19,7 @@ echo  임장지도를 켭니다. 잠시 후 브라우저가 열립니다.
 echo  끝낼 때는 이 검은 창을 닫으세요.
 echo.
 start "" cmd /c "timeout /t 2 >nul & start http://localhost:3000"
-node server.js
+node pc-server.js
 pause
 exit /b
 

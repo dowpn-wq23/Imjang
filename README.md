@@ -101,7 +101,7 @@ API 키는 앱 첫 화면(또는 지도 왼쪽 위 ⚙)에서 입력하며, 그 
 - **실거래가 매칭**은 클릭한 필지의 지번 = 신고 지번으로 찾고, 없으면 건축물대장의 건물명으로 찾습니다. 단지가 여러 필지에 걸쳐 있으면 단지 안 다른 곳을 눌러보세요.
 
 ## 파일 구성
-- `server.js` — PC/웹용 서버: 정적 파일 + API 프록시
+- `pc-server.js` — PC/웹용 서버: 정적 파일 + API 프록시
 - `core/api.js` — 공공 API·네이버 부동산 조회 로직 (서버와 아이폰 앱이 공용)
 - `mobile/` — 아이폰 앱 (Expo). `mobile/generated/`는 `npm run bundle-web`이 만드는 파일
 - `public/index.html`, `public/app.js`, `public/style.css` — 지도 앱

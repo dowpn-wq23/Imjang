@@ -1,5 +1,5 @@
 // 자동 생성 파일 — 직접 고치지 마세요. 원본: core/api.js (scripts/bundle-web.mjs)
-// 임장지도 API 공통 모듈 — PC 서버(server.js)와 아이폰 앱(mobile/)이 같이 씁니다.
+// 임장지도 API 공통 모듈 — PC 서버(pc-server.js)와 아이폰 앱(mobile/)이 같이 씁니다.
 // Node·React Native 양쪽에서 돌아가도록 fetch, AbortController, atob만 사용합니다.
 // (mobile/에서는 `npm run bundle-web`이 이 파일을 mobile/generated/로 복사해서 씁니다)
 

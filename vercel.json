@@ -1,7 +1,19 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "regions": ["icn1"],
+  "framework": null,
+  "regions": [
+    "icn1"
+  ],
   "outputDirectory": "public",
-  "rewrites": [{ "source": "/config.js", "destination": "/api/config" }],
-  "functions": { "api/**/*.js": { "maxDuration": 60 } }
+  "rewrites": [
+    {
+      "source": "/config.js",
+      "destination": "/api/config"
+    }
+  ],
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 60
+    }
+  }
 }

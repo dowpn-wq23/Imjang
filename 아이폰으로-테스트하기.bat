@@ -24,7 +24,7 @@ popd
 :run
 echo.
 echo  1. 지도 서버를 새 창에서 켭니다. 그 창은 닫지 마세요.
-start "임장지도 서버" cmd /k node server.js
+start "임장지도 서버" cmd /k node pc-server.js
 echo  2. 잠시 뒤 아래에 QR코드가 나옵니다.
 echo     아이폰 기본 카메라로 QR을 찍으면 Expo Go 앱에서 열립니다.
 echo     아이폰과 이 PC는 같은 와이파이에 연결되어 있어야 합니다.
