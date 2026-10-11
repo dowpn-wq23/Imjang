@@ -59,7 +59,7 @@ jobs:
 
       - name: 아이폰에서 여는 링크
         run: |
-          ACCOUNT="$($EAS whoami | head -1)"
+          ACCOUNT="$($EAS whoami | head -1 | cut -d" " -f1)"
           node -e '
             const fs = require("fs");
             const app = require("./app.json").expo;
