@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- 홈 화면 바로가기용: 사파리에서 이 페이지를 "홈 화면에 추가"하면 dow 아이콘이 생기고, 누르면 Expo Go의 임장지도가 열림 -->
+  <title>임장지도</title>
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#18214A">
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; min-height: 100vh; display: grid; place-content: center; gap: 16px; padding: 24px; text-align: center;
+           background: #18214A; color: #fff; font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif; }
+    img { width: 96px; height: 96px; border-radius: 22px; margin: 0 auto; }
+    a.btn { display: block; padding: 14px 18px; border-radius: 12px; background: #FF5E57; color: #fff; font-weight: 700; text-decoration: none; }
+    p { margin: 0; color: #c7cbe0; font-size: 14px; word-break: keep-all; }
+  </style>
+</head>
+<body>
+  <img src="/icons/icon-192.png" alt="">
+  <a class="btn" id="open" href="exp://u.expo.dev/d33cfd72-b900-495a-9ff8-782ae139c58f?channel-name=main">임장지도 열기</a>
+  <p>홈 화면에 아이콘을 만들려면: 사파리 아래 <b>공유(□↑)</b> → <b>홈 화면에 추가</b></p>
+  <script>
+    // 주소에 ?auto가 있으면 바로 Expo Go로 이동 (홈 화면 아이콘은 이 주소를 그대로 저장함)
+    if (/[?&]auto\b/.test(location.search)) location.href = document.getElementById('open').href;
+  </script>
+</body>
+</html>
