@@ -47,20 +47,21 @@ API 키는 앱 첫 화면(또는 지도 왼쪽 위 ⚙)에서 입력하며, 그 
 - 네이버 클라우드 Maps의 Web 서비스 URL에 `http://localhost:3000`이 등록돼 있어야 합니다 (PC용으로 이미 등록했다면 그대로 OK).
 - 네이버 부동산 요청이 클라우드가 아닌 내 폰(한국 IP)에서 나가서 차단될 가능성이 낮습니다.
 
-### 설치 방법
-**A. 테스트 (무료, 처음 한 번 PC 필요)** — Expo Go
-1. 아이폰 App Store에서 **Expo Go** 설치
-2. PC에서 **`아이폰으로-테스트하기.bat`** 더블클릭 → 윈도우 방화벽 창이 뜨면 **허용**
-3. 화면에 나온 QR을 아이폰 기본 카메라로 찍기 → Expo Go에서 임장지도가 열림
-4. 첫 화면에서 API 키 3개 입력 → 저장
+### 설치 방법 (Expo Go + Expo 클라우드, 무료 · PC 필요 없음)
+**처음 한 번만**
+1. [expo.dev](https://expo.dev/signup) 무료 가입
+2. expo.dev → 오른쪽 위 계정 → **Account settings → Access tokens → Create token** → 토큰 복사
+3. GitHub 이 저장소 → **Settings → Secrets and variables → Actions → New repository secret**
+   이름 `EXPO_TOKEN`, 값은 복사한 토큰 → 저장
+4. GitHub → **Actions → "Expo 앱 업로드" → Run workflow** (이후엔 main에 올라올 때마다 자동)
+5. 실행 결과 화면(Summary)의 `exp://u.expo.dev/...` 링크를 아이폰으로 열기 → App Store의 **Expo Go**에서 임장지도가 열림
+6. 첫 화면에서 API 키 입력 → 저장
 
-> 이 방식은 앱 코드를 PC에서 받아오므로 PC가 켜져 있고 같은 와이파이여야 열립니다.
-> PC 없이 Expo Go로 열려면 [expo.dev](https://expo.dev) 무료 계정을 만들고 `mobile/`에서 `npx eas-cli@latest update`로 앱을 올립니다.
+이후엔 Expo Go를 열고 최근 항목의 임장지도를 누르면 됩니다. 매물·실거래가는 **아이폰이 직접** 조회하므로 네이버가 막지 않습니다.
 
-**B. 내 아이폰에 정식 앱으로 설치 (Apple 개발자 계정, 연 $99)**
-1. [Apple Developer Program](https://developer.apple.com/programs/) 가입
-2. `mobile/`에서 `npx eas-cli@latest build -p ios` → 클라우드에서 빌드 (Mac 필요 없음)
-3. `npx eas-cli@latest submit -p ios` → TestFlight 앱으로 설치
+> Expo Go가 새 SDK로 업데이트되면 앱이 안 열릴 수 있습니다. 그때는 `mobile/`을 새 SDK로 올린 뒤 다시 업로드해야 합니다.
+
+**(테스트용) PC에서 바로 띄우기** — PC에서 `아이폰으로-테스트하기.bat` → QR 찍기 (PC가 켜져 있고 같은 와이파이일 때만)
 
 ### 화면을 고쳤을 때
 지도 화면 원본은 `public/`, 데이터 조회 원본은 `core/api.js` 하나입니다. 고친 뒤 `mobile/`에서 `npm run bundle-web`을 실행하면
