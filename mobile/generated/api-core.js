@@ -324,12 +324,21 @@ export function createApi({ VWORLD_KEY = '', VWORLD_DOMAIN = 'http://localhost:3
     throw new Error('네이버 부동산이 요청을 거절했습니다. 잠시 후 다시 시도하세요');
   }
 
-  // 네이버 가격 표기 → 만원 ('10억 5,000' → 105000, '9,500' → 9500, 읽을 수 없으면 맨 뒤로)
+  // 네이버 가격 표기 → 만원 ('10억 5,000' → 105000, '9,500' → 9500, 읽을 수 없으면 null)
   function priceMan(text) {
     const t = String(text ?? '').replace(/[,\s]/g, '');
     const m = t.match(/^(?:(\d+(?:\.\d+)?)억)?(\d+)?$/);
-    if (!t || !m || (!m[1] && !m[2])) return Infinity;
+    if (!t || !m || (!m[1] && !m[2])) return null;
     return Math.round(Number(m[1] || 0) * 10000) + Number(m[2] || 0);
+  }
+  // 최저가순 (월세는 보증금 → 월세 순), 가격을 읽을 수 없으면 맨 뒤
+  const byPrice = (x, y) => (x.priceMan ?? Infinity) - (y.priceMan ?? Infinity) || (x.rentMan ?? 0) - (y.rentMan ?? 0);
+  const nlOrder = new Map(); // 단지·거래유형별로 네이버가 받아준 정렬 방식 (prc 거부 시 rank)
+
+  // 앱을 켜자마자 네이버 접속 토큰을 미리 받아 두면 첫 매물 조회가 빨라짐
+  async function apiNaverWarmup() {
+    if (!NAVER_LAND_ENABLED) return [200, { ok: false }];
+    try { await naverLandToken(); return [200, { ok: true }]; } catch (e) { return [200, { ok: false, error: e.message }]; }
   }
 
   function distM(a, b) {
@@ -365,23 +374,21 @@ export function createApi({ VWORLD_KEY = '', VWORLD_DOMAIN = 'http://localhost:3
       dist: Math.round(cx.dist), url: `${NL_PAGE}/${cx.complexNo}`,
     };
 
-    // 가격순(prc)으로 받아야 5페이지 안에 최저가 매물이 들어옴. 아래에서 한 번 더 정렬함
-    const articles = await cached(`nl:art:${complex.complexNo}:${tradeType}:prc`, 10 * 60_000, async () => {
-      const out = [];
-      let order = 'prc';
-      for (let page = 1; page <= 5; page++) {
-        const get = () => naverLand(`/articles/complex/${complex.complexNo}`, { tradeType, order, page: String(page) });
-        let j;
-        try { j = await get(); } catch (e) {
-          if (page > 1 || e.status) throw e; // 차단·요청 과다는 그대로 알림
-          order = 'rank'; // 네이버가 가격순 옵션을 거부하면 랭킹순으로 받아서 직접 정렬
-          j = await get();
-        }
-        out.push(...(j.articleList ?? []));
-        if (!j.isMoreData) break;
-      }
-      return out;
-    });
+    // 한 번에 한 페이지(약 20건)만 받아 빨리 보여주고, 나머지는 앱의 '더 보기'로 받음.
+    // 가격순(prc)으로 받으므로 1페이지에 최저가 매물이 들어옴. 네이버가 거부하면 랭킹순(rank)으로 받아 직접 정렬
+    const page = Math.min(20, Math.max(1, Number(q.get('page')) || 1));
+    const orderKey = `${complex.complexNo}:${tradeType}`;
+    const fetchPage = order => cached(`nl:art:${orderKey}:${order}:${page}`, 10 * 60_000, () =>
+      naverLand(`/articles/complex/${complex.complexNo}`, { tradeType, order, page: String(page) }));
+    let j;
+    try {
+      j = await fetchPage(nlOrder.get(orderKey) || 'prc');
+    } catch (e) {
+      if (e.status || nlOrder.get(orderKey) === 'rank') throw e; // 차단·요청 과다는 그대로 알림
+      nlOrder.set(orderKey, 'rank');
+      j = await fetchPage('rank');
+    }
+    const articles = j.articleList ?? [];
 
     const listings = articles.map(a => ({
       articleNo: a.articleNo, tradeType: a.tradeTypeCode, price: a.dealOrWarrantPrc, rent: a.rentPrc && a.rentPrc !== '0' ? a.rentPrc : '',
@@ -389,10 +396,11 @@ export function createApi({ VWORLD_KEY = '', VWORLD_DOMAIN = 'http://localhost:3
       direction: a.direction, desc: a.articleFeatureDesc, tags: asArray(a.tagList), realtor: a.realtorName,
       confirmedAt: a.articleConfirmYmd, sameAddrCnt: num(a.sameAddrCnt),
       url: `${NL_PAGE}/${complex.complexNo}?articleNo=${a.articleNo}`,
+      // 정렬용 숫자(만원). 읽을 수 없는 가격(협의 등)은 null → 맨 뒤
+      priceMan: priceMan(a.dealOrWarrantPrc), rentMan: a.rentPrc && a.rentPrc !== '0' ? priceMan(a.rentPrc) : 0,
     }));
-    // 최저가순 (월세는 보증금 → 월세 순)
-    listings.sort((x, y) => priceMan(x.price) - priceMan(y.price) || priceMan(x.rent) - priceMan(y.rent));
-    return [200, { complex, candidates, tradeType, listings }];
+    listings.sort(byPrice);
+    return [200, { complex, candidates, tradeType, listings, page, hasMore: !!j.isMoreData && listings.length > 0 }];
   }
 
   // '/api/parcel?lat=..' 같은 경로를 받아 [HTTP 상태, 응답 객체]를 돌려줌
@@ -404,6 +412,7 @@ export function createApi({ VWORLD_KEY = '', VWORLD_DOMAIN = 'http://localhost:3
       if (pathname.startsWith('/api/land/')) return await apiLand(pathname.slice('/api/land/'.length));
       if (pathname === '/api/apt-trades') return await apiAptTrades(q);
       if (pathname === '/api/listings') return await apiListings(q);
+      if (pathname === '/api/naver-warmup') return await apiNaverWarmup();
       return [404, { error: 'Unknown API' }];
     } catch (err) {
       console.error(err.message);

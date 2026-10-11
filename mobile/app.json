@@ -18,7 +18,7 @@
     "android": {
       "package": "com.imjangmap.app",
       "adaptiveIcon": {
-        "backgroundColor": "#03c75a",
+        "backgroundColor": "#18214A",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -38,7 +38,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#03c75a"
+      "backgroundColor": "#18214A"
     },
     "runtimeVersion": {
       "policy": "sdkVersion"

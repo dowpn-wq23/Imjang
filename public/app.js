@@ -165,6 +165,7 @@ function init() {
 
   setMode('apt');
   setTool('info');
+  if (window.ReactNativeWebView) api('/api/naver-warmup').catch(() => {});
 }
 
 // ===================== 모드 / 도구 =====================
@@ -245,6 +246,7 @@ function onPanelClick(e) {
     case 'listing-type': cur.listingType = t.dataset.type; ensureListings(); renderInfo(); break;
     case 'complex': cur.complexNo = t.dataset.complex; ensureListings(); renderInfo(); break;
     case 'retry-listings': delete cur.listings[listingKey(cur)]; ensureListings(); renderInfo(); break;
+    case 'more-listings': loadMoreListings(); break;
     case 'pano': openPano(cur.ll); break;
     case 'retry-trades': cur.trades = null; cur.tradesErr = null; ensureTrades(); renderInfo(); break;
   }
@@ -264,7 +266,7 @@ async function showParcel(ll) {
     const land = await api(`/api/land/${parcel.pnu}`).catch(e => ({ fatal: e.message }));
     if (id !== state.reqId) return;
     state.current.land = land;
-    if (state.mode === 'apt') ensureTrades();
+    if (state.mode === 'apt') { ensureTrades(); ensureListings(); } // 매물 탭을 열기 전에 미리 조회
     renderInfo();
   } catch (e) {
     if (id === state.reqId) openPanel(errorBox(e.message));
@@ -336,6 +338,27 @@ function ensureListings() {
     .catch(e => { cur.listings[key] = { error: e.message }; })
     .finally(() => { if (state.current === cur) renderInfo(); });
 }
+
+// 다음 페이지를 받아 기존 목록에 붙이고 최저가순으로 다시 정렬
+function loadMoreListings() {
+  const cur = state.current, L = cur?.listings?.[listingKey(cur)];
+  if (!L?.hasMore || L.loadingMore) return;
+  L.loadingMore = true;
+  renderInfo();
+  const q = new URLSearchParams({
+    pnu: cur.parcel.pnu, lat: cur.ll.lat(), lng: cur.ll.lng(), tradeType: cur.listingType,
+    complexNo: L.complex.complexNo, page: String((L.page || 1) + 1),
+  });
+  api(`/api/listings?${q}`)
+    .then(r => {
+      const seen = new Set(L.listings.map(i => i.articleNo));
+      L.listings = L.listings.concat(r.listings.filter(i => !seen.has(i.articleNo))).sort(byPrice);
+      L.page = r.page; L.hasMore = r.hasMore; L.moreError = null;
+    })
+    .catch(e => { L.moreError = e.message; })
+    .finally(() => { L.loadingMore = false; if (state.current === cur) renderInfo(); });
+}
+const byPrice = (x, y) => (x.priceMan ?? Infinity) - (y.priceMan ?? Infinity) || (x.rentMan ?? 0) - (y.rentMan ?? 0);
 
 function naverLandUrl(ll) {
   const a = state.mode === 'apt' ? 'APT:ABYG:JGC' : 'SG:SMS:GJCG:TJ';
@@ -558,14 +581,16 @@ function renderListings(cur) {
       `<button data-action="complex" data-complex="${esc(o.complexNo)}" class="chip">${esc(o.name)}</button>`).join('')}</div>` : ''}`;
 
   if (!L.listings.length) return head + chips + `<div class="empty">${typeName[cur.listingType]} 매물이 없습니다.</div>` + openBtn(c.url);
-  return head + chips + `<div class="muted small">${L.listings.length}건 · 최저가순</div>` + L.listings.map(i => `
+  const more = L.loadingMore ? loadingBox('더 불러오는 중…')
+    : L.hasMore ? `${L.moreError ? `<p class="muted small">${esc(L.moreError)}</p>` : ''}<button class="btn" data-action="more-listings">매물 더 보기</button>` : '';
+  return head + chips + `<div class="muted small">${L.listings.length}건${L.hasMore ? '+' : ''} · 최저가순</div>` + L.listings.map(i => `
     <a class="lcard" href="${esc(i.url)}" target="_blank" rel="noopener">
       <div class="lcard-price"><span class="lcard-type">${esc(typeName[i.tradeType] || '')}</span> ${esc(i.price)}${i.rent ? ` / ${esc(i.rent)}` : ''}</div>
       <div class="lcard-m">${esc(i.building || '')} · ${esc(i.areaName || '')}${i.area ? `/${esc(i.area)}㎡` : ''}${i.floor ? ` · ${esc(i.floor)}층` : ''}${i.direction ? ` · ${esc(i.direction)}` : ''}</div>
       ${i.desc ? `<div class="lcard-d">${esc(i.desc)}</div>` : ''}
       ${i.tags?.length ? `<div class="tags">${i.tags.slice(0, 4).map(t => `<span class="tag tag-weak">${esc(t)}</span>`).join('')}</div>` : ''}
       <div class="lcard-f muted">${esc(i.realtor || '')}${i.confirmedAt ? ` · 확인 ${ymd(i.confirmedAt)}` : ''}${i.sameAddrCnt > 1 ? ` · 중개사 ${i.sameAddrCnt}곳` : ''}</div>
-    </a>`).join('') + openBtn(c.url);
+    </a>`).join('') + more + openBtn(c.url);
 }
 
 // ===================== 경사도 / 높이차 =====================
