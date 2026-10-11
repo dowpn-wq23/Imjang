@@ -234,17 +234,30 @@ export function createApi({ VWORLD_KEY = '', VWORLD_DOMAIN = 'http://localhost:3
   // 공식 API가 아니므로 개인 임장용으로만, 요청 간격 0.5초 이상을 지킵니다.
   const NL_BASE = 'https://new.land.naver.com/api';
   const NL_PAGE = 'https://new.land.naver.com/complexes';
+  // 헤더·쿠키는 naver-land-mcp(config.py, naver_land.py)와 똑같이 맞춤
   const NL_HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36',
-    'Accept-Language': 'ko-KR,ko;q=0.9',
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+  };
+  const NL_API_HEADERS = {
+    ...NL_HEADERS,
+    Accept: 'application/json, text/plain, */*',
     Referer: NL_PAGE,
+    'Sec-Fetch-Dest': 'empty',
+    'Sec-Fetch-Mode': 'cors',
+    'Sec-Fetch-Site': 'same-origin',
   };
   const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-  let nlToken = null;
+  let nlToken = null, nlCookie = '';
   async function naverLandToken(force = false) {
     if (!force && nlToken && nlToken.exp > Date.now() + 60_000) return nlToken.jwt;
-    const html = await getTextWith(NL_PAGE, { ...NL_HEADERS, Accept: 'text/html' });
+    const res = await nlFetch(NL_PAGE, { headers: { ...NL_HEADERS, Accept: 'text/html,application/xhtml+xml,*/*;q=0.8' } });
+    if (!res.ok) throw new Error(`네이버 부동산 HTTP ${res.status}`);
+    // 메인 페이지에서 받은 쿠키를 이후 API 요청에 같이 보냄 (requests.Session과 같은 동작)
+    const setCookies = res.headers.getSetCookie?.() ?? [];
+    nlCookie = setCookies.map(c => c.split(';')[0]).join('; ');
+    const html = await res.text();
     const jwt = html.match(/eyJ[\w-]+\.[\w-]+\.[\w-]+/)?.[0];
     if (!jwt) throw new Error('네이버 부동산 접속 토큰을 찾지 못했습니다');
     let exp = Date.now() + HOUR;
@@ -254,12 +267,6 @@ export function createApi({ VWORLD_KEY = '', VWORLD_DOMAIN = 'http://localhost:3
     } catch { /* 기본 1시간 */ }
     nlToken = { jwt, exp };
     return jwt;
-  }
-
-  async function getTextWith(url, headers) {
-    const res = await nlFetch(url, { headers });
-    if (!res.ok) throw new Error(`HTTP ${res.status} (${hostOf(url)})`);
-    return res.text();
   }
 
   // 응답 자체가 없으면(네이버가 클라우드 서버 접속을 차단) 30분 동안은 10초씩 기다리지 않고 바로 안내
@@ -300,7 +307,7 @@ export function createApi({ VWORLD_KEY = '', VWORLD_DOMAIN = 'http://localhost:3
       await nlThrottle();
       const u = `${NL_BASE}${path}?${qs(params)}`;
       const res = await nlFetch(u, {
-        headers: { ...NL_HEADERS, Accept: 'application/json', Authorization: `Bearer ${jwt}` },
+        headers: { ...NL_API_HEADERS, Authorization: `Bearer ${jwt}`, ...(nlCookie && { Cookie: nlCookie }) },
       });
       if (res.status === 429) {
         nlBlockedUntil = Date.now() + NL_COOLDOWN_MS;
