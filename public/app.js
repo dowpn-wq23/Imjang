@@ -543,7 +543,7 @@ function renderListings(cur) {
   if (!L || L.loading) return chips + loadingBox('네이버 부동산 매물 조회 중…');
   if (L.error) {
     return chips + `<div class="empty"><b>매물을 불러오지 못했습니다</b><p class="muted">${esc(L.error)}</p>
-      <button class="btn" data-action="retry-listings">다시 시도</button>${openBtn(naverLandUrl(cur.ll))}</div>`;
+      ${openBtn(naverLandUrl(cur.ll))}<button class="btn" data-action="retry-listings">다시 시도</button></div>`;
   }
 
   const c = L.complex;

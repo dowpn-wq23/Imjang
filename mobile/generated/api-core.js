@@ -258,9 +258,22 @@ export function createApi({ VWORLD_KEY = '', VWORLD_DOMAIN = 'http://localhost:3
   }
 
   async function getTextWith(url, headers) {
-    const res = await netFetch(url, { headers }, 10000);
+    const res = await nlFetch(url, { headers });
     if (!res.ok) throw new Error(`HTTP ${res.status} (${hostOf(url)})`);
     return res.text();
+  }
+
+  // 응답 자체가 없으면(네이버가 클라우드 서버 접속을 차단) 30분 동안은 10초씩 기다리지 않고 바로 안내
+  const NL_NET_BLOCK_MS = 30 * 60_000;
+  const NL_NET_BLOCK_MSG = '네이버 부동산이 클라우드 서버의 접속을 막고 있어 앱 안에서는 매물을 불러올 수 없습니다. 아래 "네이버 부동산에서 보기"를 눌러 확인하세요';
+  async function nlFetch(url, opts) {
+    try {
+      return await netFetch(url, opts, 10000);
+    } catch (e) {
+      nlBlockedUntil = Date.now() + NL_NET_BLOCK_MS;
+      nlBlockedMsg = NL_NET_BLOCK_MSG;
+      throw Object.assign(new Error(`${NL_NET_BLOCK_MSG} (${e.message.split(' —')[0]})`), { status: 503 });
+    }
   }
 
   let nlQueue = Promise.resolve(), nlLast = 0;
@@ -275,23 +288,24 @@ export function createApi({ VWORLD_KEY = '', VWORLD_DOMAIN = 'http://localhost:3
   }
 
   // 네이버가 429(요청 과다)로 막으면 그 시간 동안은 아예 요청하지 않고 쉽니다.
-  let nlBlockedUntil = 0;
+  let nlBlockedUntil = 0, nlBlockedMsg = '';
   const NL_COOLDOWN_MS = 10 * 60_000;
 
   async function naverLand(path, params = {}) {
     if (Date.now() < nlBlockedUntil) {
       const min = Math.ceil((nlBlockedUntil - Date.now()) / 60_000);
-      throw Object.assign(new Error(`네이버 부동산이 접속을 일시 제한했습니다. 약 ${min}분 뒤 다시 시도하세요`), { status: 429 });
+      throw Object.assign(new Error(nlBlockedMsg || `네이버 부동산이 접속을 일시 제한했습니다. 약 ${min}분 뒤 다시 시도하세요`), { status: 429 });
     }
     for (let attempt = 0; attempt < 2; attempt++) {
       const jwt = await naverLandToken(attempt > 0);
       await nlThrottle();
       const u = `${NL_BASE}${path}?${qs(params)}`;
-      const res = await netFetch(u, {
+      const res = await nlFetch(u, {
         headers: { ...NL_HEADERS, Accept: 'application/json', Authorization: `Bearer ${jwt}` },
-      }, 10000);
+      });
       if (res.status === 429) {
         nlBlockedUntil = Date.now() + NL_COOLDOWN_MS;
+        nlBlockedMsg = '';
         throw Object.assign(new Error('네이버 부동산이 접속을 일시 제한했습니다(요청 과다). 10분쯤 뒤 다시 시도하세요'), { status: 429 });
       }
       if (res.status === 401 || res.status === 403) continue; // 토큰 재발급 후 한 번만 재시도
