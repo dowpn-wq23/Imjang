@@ -39,6 +39,9 @@
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#03c75a"
+    },
+    "runtimeVersion": {
+      "policy": "sdkVersion"
     }
   }
 }

@@ -48,6 +48,7 @@ jobs:
       - name: Expo 프로젝트 연결 (없으면 만들기)
         run: $EAS init --non-interactive --force
 
+      # app.json의 runtimeVersion은 sdkVersion 정책(exposdk:57.0.0)이어야 Expo Go가 channel 링크로 엽니다
       - name: EAS Update 설정
         run: $EAS update:configure --platform ios --environment production --non-interactive
 
