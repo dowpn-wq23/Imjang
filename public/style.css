@@ -22,6 +22,12 @@
   }
 }
 
+/* 화면 위·아래 안전 영역. 아이폰 앱(WebView)에서는 env()가 0이라 앱이 잰 값(--app-safe-*)을 씀 */
+:root {
+  --safe-top: max(env(safe-area-inset-top), var(--app-safe-top, 0px));
+  --safe-bottom: max(env(safe-area-inset-bottom), var(--app-safe-bottom, 0px));
+}
+
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color: var(--fg); }
 button { font: inherit; color: inherit; cursor: pointer; }
@@ -31,11 +37,12 @@ body:not(.in-app) .app-only { display: none; }
 .muted { color: var(--muted); font-weight: 400; }
 
 /* 네이버 지도가 컨테이너에 position:relative를 넣으므로 크기를 직접 고정 */
-#map { position: fixed !important; inset: 0; width: 100%; height: 100%; }
+/* 지도는 상태바 아래에서 시작 → 오른쪽 위 일반/위성 버튼이 상태바에 가려지지 않음 */
+#map { position: fixed !important; inset: var(--safe-top) 0 0 0; width: 100%; height: auto !important; }
 
 /* ---------- 상단 바 ---------- */
 .topbar {
-  position: absolute; z-index: 20; top: calc(10px + env(safe-area-inset-top)); left: 10px;
+  position: absolute; z-index: 20; top: calc(12px + var(--safe-top)); left: 10px;
   display: flex; align-items: center; gap: 10px;
   background: var(--bg); border-radius: 999px; padding: 4px 4px 4px 14px; box-shadow: var(--shadow);
 }
@@ -46,7 +53,7 @@ body:not(.in-app) .app-only { display: none; }
 
 /* ---------- 도구 버튼 ---------- */
 .tools {
-  position: absolute; z-index: 20; left: 10px; top: calc(66px + env(safe-area-inset-top));
+  position: absolute; z-index: 20; left: 10px; top: calc(68px + var(--safe-top));
   display: flex; flex-direction: column; gap: 6px;
   background: var(--bg); border-radius: var(--radius); padding: 6px; box-shadow: var(--shadow);
 }
@@ -54,15 +61,23 @@ body:not(.in-app) .app-only { display: none; }
   border: 0; background: none; padding: 9px 10px; border-radius: 10px; font-size: 13px; font-weight: 600; min-width: 64px;
 }
 .tools button.active { background: var(--accent); color: var(--accent-fg); }
+.maptype {
+  position: absolute; z-index: 20; right: 10px; top: calc(12px + var(--safe-top));
+  display: flex; gap: 4px; background: var(--bg); border-radius: 12px; padding: 4px; box-shadow: var(--shadow);
+}
+.maptype button { border: 0; background: none; padding: 8px 11px; border-radius: 9px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.maptype button.active { background: var(--accent); color: var(--accent-fg); }
+/* 휴대폰: 상단 바 아래 줄 오른쪽 (왼쪽 도구 버튼과 같은 높이) */
+@media (max-width: 720px) { .maptype { top: calc(68px + var(--safe-top)); } }
 .tools .sep { height: 1px; background: var(--line); margin: 2px 4px; }
 
 .hint {
-  position: absolute; z-index: 25; left: 50%; top: calc(14px + env(safe-area-inset-top)); transform: translate(-50%, -8px);
+  position: absolute; z-index: 25; left: 50%; top: calc(14px + var(--safe-top)); transform: translate(-50%, -8px);
   background: rgba(20, 22, 26, .88); color: #fff; padding: 8px 14px; border-radius: 999px; font-size: 13px;
   opacity: 0; pointer-events: none; transition: .2s; white-space: nowrap; max-width: calc(100vw - 32px); overflow: hidden; text-overflow: ellipsis;
 }
 .hint.show { opacity: 1; transform: translate(-50%, 0); }
-@media (max-width: 720px) { .hint { top: auto; bottom: calc(20px + env(safe-area-inset-bottom)); } }
+@media (max-width: 720px) { .hint { top: auto; bottom: calc(20px + var(--safe-bottom)); } }
 
 /* ---------- 정보 패널: 데스크톱 우측 / 모바일 바텀시트 ---------- */
 .panel {
@@ -74,7 +89,7 @@ body:not(.in-app) .app-only { display: none; }
 @media (max-width: 720px) {
   .panel {
     top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: 52vh;
-    border-radius: 18px 18px 0 0; padding-bottom: env(safe-area-inset-bottom); transition: max-height .2s;
+    border-radius: 18px 18px 0 0; padding-bottom: var(--safe-bottom); transition: max-height .2s;
   }
   .panel.expanded { max-height: 88vh; }
 }
@@ -193,7 +208,7 @@ tr.canceled .badge { text-decoration: none; }
 
 /* ---------- 아이폰 홈 화면 설치 안내 ---------- */
 .install-tip {
-  position: absolute; z-index: 40; left: 10px; right: 10px; bottom: calc(12px + env(safe-area-inset-bottom));
+  position: absolute; z-index: 40; left: 10px; right: 10px; bottom: calc(12px + var(--safe-bottom));
   display: flex; align-items: center; gap: 10px; max-width: 480px; margin: 0 auto;
   background: var(--bg); color: var(--fg); border-radius: var(--radius); padding: 12px 8px 12px 14px; box-shadow: var(--shadow); font-size: 14px; line-height: 1.45;
 }

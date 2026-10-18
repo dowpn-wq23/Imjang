@@ -139,8 +139,7 @@ function init() {
   state.map = new N.Map('map', {
     center, zoom,
     mapTypeId: N.MapTypeId.HYBRID,   // 위성 + 도로/지명 라벨
-    mapTypeControl: true,
-    mapTypeControlOptions: { style: N.MapTypeControlStyle.BUTTON, position: N.Position.TOP_RIGHT },
+    mapTypeControl: false,             // 지도 종류는 화면의 .maptype 버튼으로 (휴대폰에서 누르기 쉬운 위치)
     zoomControl: true,
     zoomControlOptions: { position: N.Position.RIGHT_CENTER },
     scaleControl: true,
@@ -158,6 +157,10 @@ function init() {
   $$('.tools [data-tool]').forEach(b => b.addEventListener('click', () => setTool(b.dataset.tool)));
   $('#btn-cadastral').addEventListener('click', () => setCadastral(!state.cadastralOn));
   $('#btn-locate').addEventListener('click', locateMe);
+  $$('.maptype [data-maptype]').forEach(b => b.addEventListener('click', () => {
+    state.map.setMapTypeId(N.MapTypeId[b.dataset.maptype]);
+    $$('.maptype [data-maptype]').forEach(x => x.classList.toggle('active', x === b));
+  }));
   $('.panel-close').addEventListener('click', closePanel);
   $('.panel-grip').addEventListener('click', () => $('#panel').classList.toggle('expanded'));
   $('.pano-close').addEventListener('click', closePano);

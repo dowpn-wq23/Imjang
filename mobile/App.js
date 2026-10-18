@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SafeAreaProvider, initialWindowMetrics, useSafeAreaInsets } from 'react-native-safe-area-context';
 import WEB_HTML from './generated/web';
 import { createApi } from './generated/api-core';
 
@@ -13,7 +14,17 @@ const BASE_URL = 'http://localhost:3000/';
 const STORE_KEY = 'imjang:keys';
 const DEFAULT_KEYS = { naverKeyId: '', vworldKey: '', vworldDomain: 'http://localhost:3000', dataGoKrKey: '', naverLand: true };
 
+// 화면 위 상태바·아래 홈 막대 높이를 재서 지도 화면에 넘겨 줌 (WebView 안에서는 CSS env()가 0으로 나옴)
 export default function App() {
+  return (
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <MapApp />
+    </SafeAreaProvider>
+  );
+}
+
+function MapApp() {
+  const insets = useSafeAreaInsets();
   const [keys, setKeys] = useState(null); // null = 불러오는 중
   const [editing, setEditing] = useState(false);
   const [loadError, setLoadError] = useState(null);
@@ -47,12 +58,14 @@ export default function App() {
     NAVER_LAND_ENABLED: keys.naverLand,
   }), [keys]);
 
-  // 서버의 /config.js 대신 키를 화면에 직접 끼워 넣음
+  // 서버의 /config.js 대신 키와 안전 영역(상태바 높이)을 화면에 직접 끼워 넣음
+  const top = Math.round(insets.top), bottom = Math.round(insets.bottom);
   const html = useMemo(() => {
     if (!keys) return '';
     const cfg = JSON.stringify({ naverKeyId: keys.naverKeyId }).replace(/</g, '\\u003c');
-    return WEB_HTML.replace('<!--APP_CONFIG-->', () => `<script>window.IMJANG_APP = true; window.APP_CONFIG = ${cfg};</script>`);
-  }, [keys]);
+    const safe = `<style>:root{--app-safe-top:${top}px;--app-safe-bottom:${bottom}px}</style>`;
+    return WEB_HTML.replace('<!--APP_CONFIG-->', () => `${safe}<script>window.IMJANG_APP = true; window.APP_CONFIG = ${cfg};</script>`);
+  }, [keys, top, bottom]);
 
   const sendToWeb = useCallback(msg => {
     webRef.current?.injectJavaScript(`window.__imjangNative && window.__imjangNative(${JSON.stringify(msg)}); true;`);
