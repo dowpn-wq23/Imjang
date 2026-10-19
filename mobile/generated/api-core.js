@@ -335,6 +335,69 @@ export function createApi({ VWORLD_KEY = '', VWORLD_DOMAIN = 'http://localhost:3
   const byPrice = (x, y) => (x.priceMan ?? Infinity) - (y.priceMan ?? Infinity) || (x.rentMan ?? 0) - (y.rentMan ?? 0);
   const nlOrder = new Map(); // 단지·거래유형별로 네이버가 받아준 정렬 방식 (prc 거부 시 rank)
 
+  // ---------- 아파트 이름 검색 (자동완성) ----------
+  // 네이버 부동산 단지 검색(앱에서만 됨) + VWorld 장소 검색(웹에서도 됨)을 합쳐 최대 10개
+  const pick = (o, ...keys) => { for (const k of keys) if (o?.[k] != null && o[k] !== '') return o[k]; return undefined; };
+  const normKey = s => String(s ?? '').replace(/\s|\(.*?\)|아파트/g, '').toLowerCase();
+
+  async function searchNaver(query) {
+    if (!NAVER_LAND_ENABLED) return [];
+    const j = await cached(`nl:search:${query}`, 10 * 60_000, () => naverLand('/search', { keyword: query }));
+    return asArray(j?.complexes).map(c => ({
+      name: pick(c, 'complexName', 'name'),
+      address: pick(c, 'cortarAddress', 'address', 'detailAddress') || '',
+      type: pick(c, 'realEstateTypeName') || '',
+      households: num(pick(c, 'totalHouseholdCount')),
+      lat: num(pick(c, 'latitude', 'lat')), lng: num(pick(c, 'longitude', 'lng')),
+      complexNo: String(pick(c, 'complexNo') ?? '') || undefined,
+      source: 'naver',
+    })).filter(c => c.name);
+  }
+
+  async function searchVworld(query) {
+    if (!VWORLD_KEY) return [];
+    const j = await cached(`vw:search:${query}`, HOUR, async () => JSON.parse(await getText(`https://api.vworld.kr/req/search?${qs({
+      service: 'search', request: 'search', version: '2.0', crs: 'EPSG:4326', size: '15', page: '1',
+      query, type: 'place', format: 'json', errorformat: 'json', key: VWORLD_KEY, domain: VWORLD_DOMAIN,
+    })}`)));
+    const r = j?.response;
+    if (r?.status === 'NOT_FOUND') return [];
+    if (r?.status !== 'OK') throw new Error(`VWorld 검색: ${r?.error?.text ?? r?.status}`);
+    return asArray(r.result?.items)
+      .filter(i => /아파트|주상복합|주택|오피스텔/.test(`${i.category ?? ''} ${i.title ?? ''}`))
+      .map(i => ({
+        name: i.title, address: i.address?.road || i.address?.parcel || '', type: '',
+        lat: num(i.point?.y), lng: num(i.point?.x), source: 'vworld',
+      })).filter(i => i.name && Number.isFinite(i.lat));
+  }
+
+  async function apiSearch(q) {
+    const query = (q.get('q') ?? '').trim().slice(0, 40);
+    if (!query) return [200, { query, items: [] }];
+    const [nv, vw] = await Promise.allSettled([searchNaver(query), searchVworld(query)]);
+    const items = [], seen = new Set();
+    for (const it of [...(nv.value ?? []), ...(vw.value ?? [])]) {
+      const k = normKey(it.name);
+      if (seen.has(k)) continue;
+      seen.add(k); items.push(it);
+      if (items.length >= 10) break;
+    }
+    const errors = [nv, vw].filter(r => r.status === 'rejected').map(r => r.reason.message);
+    if (!items.length && errors.length === 2) return [502, { error: errors.join(' / ') }];
+    return [200, { query, items, naverOk: nv.status === 'fulfilled' }];
+  }
+
+  // 검색 결과에 좌표가 없을 때 단지 번호로 위치 조회
+  async function apiComplexLocation(q) {
+    const no = q.get('complexNo') ?? '';
+    if (!/^\d+$/.test(no)) return [400, { error: '단지 번호가 필요합니다' }];
+    const j = await cached(`nl:cxloc:${no}`, 24 * HOUR, () => naverLand(`/complexes/${no}`));
+    const d = j?.complexDetail ?? {};
+    const lat = num(d.latitude), lng = num(d.longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return [404, { error: '단지 위치를 찾지 못했습니다' }];
+    return [200, { complexNo: no, name: d.complexName, address: d.address || d.cortarAddress || '', lat, lng }];
+  }
+
   // 앱을 켜자마자 네이버 접속 토큰을 미리 받아 두면 첫 매물 조회가 빨라짐
   async function apiNaverWarmup() {
     if (!NAVER_LAND_ENABLED) return [200, { ok: false }];
@@ -413,6 +476,8 @@ export function createApi({ VWORLD_KEY = '', VWORLD_DOMAIN = 'http://localhost:3
       if (pathname === '/api/apt-trades') return await apiAptTrades(q);
       if (pathname === '/api/listings') return await apiListings(q);
       if (pathname === '/api/naver-warmup') return await apiNaverWarmup();
+      if (pathname === '/api/search') return await apiSearch(q);
+      if (pathname === '/api/complex-location') return await apiComplexLocation(q);
       return [404, { error: 'Unknown API' }];
     } catch (err) {
       console.error(err.message);

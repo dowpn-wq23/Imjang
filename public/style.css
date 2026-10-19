@@ -42,11 +42,27 @@ body:not(.in-app) .app-only { display: none; }
 
 /* ---------- 상단 바 ---------- */
 .topbar {
-  position: absolute; z-index: 20; top: calc(12px + var(--safe-top)); left: 10px;
+  position: absolute; z-index: 30; top: calc(12px + var(--safe-top)); left: 10px; width: min(520px, calc(100% - 20px));
   display: flex; align-items: center; gap: 10px;
   background: var(--bg); border-radius: 999px; padding: 4px 4px 4px 14px; box-shadow: var(--shadow);
 }
-.brand { font-weight: 800; font-size: 15px; letter-spacing: -.3px; }
+/* 아파트 검색창 (상단 바 왼쪽) + 자동완성 목록 */
+.search { flex: 1; min-width: 0; display: flex; }
+.search input { width: 100%; min-width: 120px; border: 0; background: transparent; color: var(--fg); font-size: 16px; padding: 7px 0; outline: none; }
+.search input::placeholder { color: var(--muted); }
+.search input::-webkit-search-cancel-button { display: none; }
+.search-list {
+  position: absolute; z-index: 35; left: 10px; top: calc(66px + var(--safe-top)); width: min(520px, calc(100% - 20px));
+  margin: 0; padding: 4px 0; list-style: none; background: var(--bg); border-radius: var(--radius); box-shadow: var(--shadow);
+  max-height: 55vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+}
+.search-list li { padding: 10px 14px; border-bottom: 1px solid var(--line); cursor: pointer; }
+.search-list li:last-child { border-bottom: 0; }
+.search-list li[aria-selected="true"], .search-list li:active { background: var(--bg-soft); }
+.search-list .sr-name { font-size: 15px; font-weight: 600; }
+.search-list .sr-name b { color: var(--accent); }
+.search-list .sr-sub { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.search-list .sr-empty { color: var(--muted); font-size: 14px; cursor: default; }
 .mode-tabs { display: flex; background: var(--bg-soft); border-radius: 999px; padding: 3px; }
 .mode-tabs button { border: 0; background: none; padding: 7px 14px; border-radius: 999px; font-size: 14px; font-weight: 600; color: var(--muted); }
 .mode-tabs button.active { background: var(--accent); color: var(--accent-fg); }

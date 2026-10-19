@@ -157,6 +157,7 @@ function init() {
   $$('.tools [data-tool]').forEach(b => b.addEventListener('click', () => setTool(b.dataset.tool)));
   $('#btn-cadastral').addEventListener('click', () => setCadastral(!state.cadastralOn));
   $('#btn-locate').addEventListener('click', locateMe);
+  initSearch();
   $$('.maptype [data-maptype]').forEach(b => b.addEventListener('click', () => {
     state.map.setMapTypeId(N.MapTypeId[b.dataset.maptype]);
     $$('.maptype [data-maptype]').forEach(x => x.classList.toggle('active', x === b));
@@ -212,6 +213,108 @@ function setHint(text) {
   hintTimer = setTimeout(() => el.classList.remove('show'), 3500);
 }
 
+// ===================== 아파트 검색 (자동완성) =====================
+// 글자를 입력하면 0.3초 뒤 /api/search 로 추천 목록을 받고, 고르면 그 단지로 이동해 정보·매물을 엶
+const search = { timer: 0, seq: 0, items: [], active: -1 };
+
+function initSearch() {
+  const input = $('#search-input'), list = $('#search-list');
+  input.addEventListener('input', () => {
+    clearTimeout(search.timer);
+    const q = input.value.trim();
+    if (!q) { search.seq++; search.items = []; return hideSearch(); }
+    search.timer = setTimeout(() => runSearch(q), 300);
+  });
+  input.addEventListener('focus', () => { if (input.value.trim() && list.children.length) list.classList.remove('hidden'); });
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { hideSearch(); input.blur(); return; }
+    if (!search.items.length || !['ArrowDown', 'ArrowUp'].includes(e.key)) return;
+    e.preventDefault();
+    const n = search.items.length;
+    search.active = e.key === 'ArrowDown' ? (search.active + 1) % n : (search.active <= 0 ? n - 1 : search.active - 1);
+    $$('#search-list li[data-i]').forEach((li, i) => li.setAttribute('aria-selected', String(i === search.active)));
+  });
+  // 키보드의 '검색'(Enter): 고른 항목, 없으면 첫 번째 추천으로 이동
+  $('.search').addEventListener('submit', e => {
+    e.preventDefault();
+    const it = search.items[Math.max(0, search.active)];
+    if (it) pickSearch(it);
+    else if (input.value.trim()) { clearTimeout(search.timer); runSearch(input.value.trim()); }
+  });
+  list.addEventListener('click', e => {
+    const li = e.target.closest('li[data-i]');
+    if (li) pickSearch(search.items[Number(li.dataset.i)]);
+  });
+  // 검색창·목록 밖을 누르면 목록 닫기
+  document.addEventListener('pointerdown', e => { if (!e.target.closest('.search, #search-list')) hideSearch(); });
+}
+
+function hideSearch() { $('#search-list').classList.add('hidden'); }
+
+function showSearchRows(html) {
+  const list = $('#search-list');
+  list.innerHTML = html;
+  list.classList.remove('hidden');
+}
+
+async function runSearch(q) {
+  const id = ++search.seq;
+  if (!search.items.length) showSearchRows('<li class="sr-empty">검색 중…</li>');
+  try {
+    const r = await api(`/api/search?q=${encodeURIComponent(q)}`);
+    if (id !== search.seq) return; // 그 사이 더 입력했으면 버림
+    search.items = r.items;
+    search.active = -1;
+    const note = r.naverOk === false && !IN_APP ? '<li class="sr-empty">웹에서는 네이버 단지 검색이 막혀 일부만 나옵니다. 아이폰 앱에서는 모두 나옵니다.</li>' : '';
+    if (!r.items.length) return showSearchRows(`<li class="sr-empty">'${esc(q)}'와 일치하는 아파트가 없습니다</li>${note}`);
+    showSearchRows(r.items.map((it, i) => `<li role="option" data-i="${i}" aria-selected="false">
+      <div class="sr-name">${highlight(it.name, q)}</div>
+      <div class="sr-sub">${esc([it.address, it.type, it.households && `${fmt(it.households)}세대`].filter(Boolean).join(' · '))}</div></li>`).join('') + note);
+  } catch (e) {
+    if (id === search.seq) { search.items = []; showSearchRows(`<li class="sr-empty">검색하지 못했습니다: ${esc(e.message)}</li>`); }
+  }
+}
+
+// 이름에서 입력한 글자 부분을 굵게 (띄어쓰기 차이는 무시)
+function highlight(name, q) {
+  const flat = s => s.replace(/\s+/g, '');
+  const key = flat(q).toLowerCase();
+  if (!key) return esc(name);
+  const chars = [...name];
+  for (let start = 0; start < chars.length; start++) {
+    if (/\s/.test(chars[start])) continue;
+    let k = 0, end = start;
+    while (end < chars.length && k < key.length) {
+      if (/\s/.test(chars[end])) { end++; continue; }
+      if (chars[end].toLowerCase() !== key[k]) break;
+      end++; k++;
+    }
+    if (k === key.length) return esc(chars.slice(0, start).join('')) + '<b>' + esc(chars.slice(start, end).join('')) + '</b>' + esc(chars.slice(end).join(''));
+  }
+  return esc(name);
+}
+
+async function pickSearch(it) {
+  const input = $('#search-input');
+  hideSearch();
+  input.value = it.name;
+  input.blur();
+  let { lat, lng } = it;
+  if (!Number.isFinite(lat) && it.complexNo) {
+    setHint('단지 위치 찾는 중…');
+    try { ({ lat, lng } = await api(`/api/complex-location?complexNo=${encodeURIComponent(it.complexNo)}`)); }
+    catch (e) { return setHint(`위치를 찾지 못했습니다: ${e.message}`); }
+  }
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return setHint('이 결과에는 위치 정보가 없습니다');
+  const ll = new naver.maps.LatLng(lat, lng);
+  state.map.setCenter(ll);
+  state.map.setZoom(17);
+  if (state.mode !== 'apt') setMode('apt');
+  if (state.tool !== 'info') setTool('info');
+  state.pendingComplexNo = it.complexNo || null;
+  showParcel(ll);
+}
+
 function onMapClick(ll) {
   if (state.tool === 'info') showParcel(ll);
   else if (state.tool === 'slope') addSlopePoint(ll);
@@ -258,13 +361,15 @@ function onPanelClick(e) {
 // ===================== 필지 정보 (토지이음 데이터) =====================
 async function showParcel(ll) {
   const id = ++state.reqId;
+  const complexNo = state.pendingComplexNo || undefined; // 검색에서 고른 단지면 매물도 그 단지로
+  state.pendingComplexNo = null;
   placeClickMarker(ll);
   openPanel(loadingBox('필지 조회 중…'));
   try {
     const parcel = await api(`/api/parcel?lat=${ll.lat()}&lng=${ll.lng()}`);
     if (id !== state.reqId) return;
     drawParcel(parcel.geometry);
-    state.current = { ll, parcel, land: null, tab: 'land', area: 'all', listingType: 'A1' };
+    state.current = { ll, parcel, land: null, tab: 'land', area: 'all', listingType: 'A1', complexNo };
     renderInfo();
     const land = await api(`/api/land/${parcel.pnu}`).catch(e => ({ fatal: e.message }));
     if (id !== state.reqId) return;
